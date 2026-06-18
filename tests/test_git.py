@@ -47,13 +47,13 @@ class TestClonePublicRepo(unittest.TestCase):
 
 
 class TestClonePrivateRepo(unittest.TestCase):
-    """Tests for cloning a private repository using a GitHub token."""
+    """Tests for cloning a private repository with different authentication methods."""
 
     def setUp(self):
-        self.token = os.getenv("GITHUB_TOKEN")
-        self.username = os.getenv("GITHUB_USERNAME")
+        self.token = os.getenv("GIT_TOKEN")
+        self.username = os.getenv("GIT_USER")
         if not self.token:
-            self.skipTest("GITHUB_TOKEN not set — skipping private repo tests")
+            self.skipTest("GIT_TOKEN not set — skipping private repo tests")
 
     def test_clone_with_token(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -69,22 +69,14 @@ class TestClonePrivateRepo(unittest.TestCase):
             auth = GitAuth(
                 method=AuthMethod.BASIC,
                 username=self.username,
-                password=self.token,  # GitHub requires token as password
+                password=self.token,
             )
             clone_repo(url=PRIVATE_REPO_URL, dest=dest, auth=auth, trace_vars=GIT_TRACE_VARS)
             self.assertTrue(dest.exists())
             self.assertTrue((dest / ".git").exists())
 
     def test_clone_fails_without_auth(self):
-        github_token_set = "GITHUB_TOKEN" in os.environ
-        if github_token_set:
-            os.environ.pop("GITHUB_TOKEN", None)  # Ensure token is not set
-
-        try:
             with tempfile.TemporaryDirectory() as tmp:
                 dest = Path(tmp) / "private"
                 with self.assertRaises(RuntimeError):
                     clone_repo(url=PRIVATE_REPO_URL, dest=dest, trace_vars=GIT_TRACE_VARS)
-        finally:
-            if github_token_set:
-                os.environ["GITHUB_TOKEN"] = self.token  # Restore token for other tests
