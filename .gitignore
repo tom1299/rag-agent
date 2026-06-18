@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[oc]
+*.pyd
+*.egg
+*.egg-info/
+build/
+dist/
+wheels/
+
+# uv
+.venv/
+.python-version
+
+# Environment / secrets
+.env
+*.env.local
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
