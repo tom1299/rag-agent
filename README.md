@@ -4,7 +4,8 @@ uv export --format requirements-txt > requirements.txt
 ```
 
 ## TODOs
-* [ ] Add method for agent to work an already existing folder
+* [x] Add method for agent to work an already existing folder
+* [ ] Expose using a2a sdk
 * [ ] Use persistent vector database based on Docker
 * [ ] Try integration with VSCode. See https://pascoal.net/2024/10/31/gh-copilot-extensions-vscode-creating-extension/
 * [ ] Enhance document generation to include metadata like links to the original source and edit button

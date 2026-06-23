@@ -35,7 +35,4 @@ class TestCloneAndIndex(unittest.TestCase):
                 "Why is (automated) Software Testing Important?"
             )
 
-            for doc, score in results:
-                print(doc)
-                print(f"Score: {score}")
-                print("==========")
+            assert len(results) > 0

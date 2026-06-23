@@ -8,9 +8,7 @@ from .vector_store import create_vector_store
 
 from .git import clone_repo
 
-def create_markdown_rag_agent(git_url: str, auth=None, model=None, system_prompt: str = None):
-    documents_path = Path(tempfile.mkdtemp())
-    clone_repo(git_url, dest=documents_path, auth=auth)
+def create_markdown_rag_agent_from_path(documents_path: Path, model=None, system_prompt: str = None):
     markdown_documents = split_markdown_folder(documents_path)
     vector_store = create_vector_store(markdown_documents)
 
@@ -35,3 +33,7 @@ def create_markdown_rag_agent(git_url: str, auth=None, model=None, system_prompt
 
     return agent
 
+def create_markdown_rag_agent(git_url: str, auth=None, model=None, system_prompt: str = None):
+    documents_path = Path(tempfile.mkdtemp())
+    clone_repo(git_url, dest=documents_path, auth=auth)
+    return create_markdown_rag_agent_from_path(documents_path=documents_path, model=model, system_prompt=system_prompt)

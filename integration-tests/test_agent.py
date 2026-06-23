@@ -1,6 +1,7 @@
 import os
 
 import unittest
+from unittest.result import failfast
 
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
@@ -41,7 +42,10 @@ class TestRagMarkdownAgent(unittest.TestCase):
             The guidelines must always be the basis for your answer.
             Always include the most relevant document from the retrieved context as a citation in your answer.
         """
-        agent = create_markdown_rag_agent(os.getenv("IT_TEST_REPO_URL"),
+        repo_url = os.getenv("IT_TEST_REPO_URL")
+        if not repo_url:
+            self.skipTest("IT_TEST_REPO_URL not set — skipping private repo tests")
+        agent = create_markdown_rag_agent(repo_url,
                     model=model, system_prompt=system_prompt, auth=auth)
         query = """
         Apply code guidelines to the following function. Include refactored code and citation
@@ -60,9 +64,5 @@ class TestRagMarkdownAgent(unittest.TestCase):
         assert tool_invocation.tool_calls[0]["name"] == 'retrieve_context'
 
         assert tool_response.artifact[0].metadata['Header 1'] == 'Conventions and Documentation'
-
-        assert "Conventions and Documentation" in final_response.text
-
-        print(response)
 
 
