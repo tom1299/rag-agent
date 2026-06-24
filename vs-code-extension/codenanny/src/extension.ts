@@ -9,6 +9,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 export function activate(context: vscode.ExtensionContext) {
 	let clientPromise: Promise<Client> | undefined;
+	const readmeUri = vscode.Uri.joinPath(context.extensionUri, 'README.md');
+
 	const getClient = () => {
 		if (!clientPromise) {
 			clientPromise = Promise.resolve().then(() => {
@@ -24,32 +26,9 @@ export function activate(context: vscode.ExtensionContext) {
 	outputChannel.appendLine('Congratulations, your extension "codenanny" is now active!');
 
 	const participant = vscode.chat.createChatParticipant('codenanny', async (request, _context, response, _token) => {
-		const client = await getClient();
-
-		const agentRequest: SendMessageRequest = {
-			tenant: '',
-			message: {
-				messageId: uuidv4(),
-				contextId: '',
-				taskId: '',
-				role: Role.ROLE_USER,
-				parts: [
-					{
-						content: { $case: 'text', value: 'What is the weather in Boston?' },
-						metadata: undefined,
-						filename: '',
-						mediaType: 'text/plain',
-					},
-				],
-				metadata: undefined,
-				extensions: [],
-				referenceTaskIds: [],
-			},
-			configuration: undefined,
-			metadata: undefined,
-		};
 
 		try {
+			
 			// Access to open editor and selected text is possible
 			// => Pass them to the agent as part of the request
 			const editor = vscode.window.activeTextEditor;
@@ -59,6 +38,36 @@ export function activate(context: vscode.ExtensionContext) {
 			const selection = editor.selection;
 			const selectedText = editor.document.getText(selection);
 
+			if (!selectedText) {
+				response.markdown('No code selected. Please select some code to analyze.');
+				return;
+			}
+
+			const client = await getClient();
+
+			const agentRequest: SendMessageRequest = {
+				tenant: '',
+				message: {
+					messageId: uuidv4(),
+					contextId: '',
+					taskId: '',
+					role: Role.ROLE_USER,
+					parts: [
+						{
+							content: { $case: 'text', value: selectedText },
+							metadata: undefined,
+							filename: '',
+							mediaType: 'text/plain',
+						},
+					],
+					metadata: undefined,
+					extensions: [],
+					referenceTaskIds: [],
+				},
+				configuration: undefined,
+				metadata: undefined,
+			};
+
 			const sendResponse = await client.sendMessage(agentRequest) as SendMessageResult;
 			// Check if the response is a Message or a Task and log accordingly
 			// TODO: Implement handling of tasks / messages properly
@@ -66,11 +75,26 @@ export function activate(context: vscode.ExtensionContext) {
 				const result = sendResponse as Message;
 				const textPart = result.parts.find((part) => part.content?.$case === 'text');
 				if (textPart?.content?.$case === 'text') {
+					response.markdown(textPart.content.value);
 					outputChannel.appendLine(`Agent response: ${textPart.content.value}`);
 				}
 			} else if ('id' in sendResponse) {
 				const task = sendResponse as Task;
 				response.markdown(task.artifacts[0].parts[0].content?.value || '');
+				// TODO: Implement proper handling of feedback buttons
+				const editButton: vscode.Command = {
+					title: 'Edit Cuideline',
+					command: 'vscode.open',
+					arguments: ["https://google.com"],
+				};
+				// TODO: Implement proper handling of feedback buttons (see above as well)
+				const discussButton: vscode.Command = {
+					title: 'Discuss in Teams',
+					command: 'vscode.open',
+					arguments: ["http://google.com"],
+				};				
+				response.button(editButton);
+				response.button(discussButton);
 			} else {
 				outputChannel.appendLine(`Unknown response type`);
 			}
@@ -83,12 +107,11 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			} else {
 				outputChannel.appendLine(`Task state: ${sendResponse.status?.state}`);
+				response.markdown("Agent task is in progress. Please wait...");
 			}
 		} catch (e) {
 			outputChannel.appendLine(`Error: ${String(e)}`);
 		}
-
-		response.markdown(request.prompt);
 	});
 
 	context.subscriptions.push(participant);
